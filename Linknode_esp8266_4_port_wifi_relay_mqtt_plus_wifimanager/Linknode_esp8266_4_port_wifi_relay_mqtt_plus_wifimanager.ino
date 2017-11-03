@@ -34,6 +34,17 @@ Shows the status of relay
  
 */
 
+/*
+ * Nov 3, 2017 - Added status update.
+ *               Added unique MQTT client ID.
+ *               Moved Ack Updates to void updateStatus()
+ *               
+ * Things that could be improved:
+ * Relay just listen for messages addressed to this module.
+ * Change status, and relay information (relayout) to use json strings
+ * 
+ */
+
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ESP8266WebServer.h>
@@ -82,7 +93,7 @@ void setup() {
     Serial.println("connected...yeey :)");
 
 
- 
+//Probably should have used #define for the pins...oh well 
    pinMode(12, OUTPUT); //D10 
    pinMode(13, OUTPUT); //D8
    pinMode(14, OUTPUT); //D4
@@ -107,43 +118,44 @@ switch ((char)payload[0]) {
   case '1':
   client.publish(outTopic, "Relay One: ");
   toggle1 = !toggle1;
-    if (toggle1 == 0) { 
-      client.publish(outTopic, "Off"); } else {
-        client.publish(outTopic, "On");
-      }
+    updateStatus(toggle1);
       digitalWrite(12, toggle1);
   break;
   case '2':
   client.publish(outTopic, "Relay Two: ");
   toggle2 = !toggle2;
-    if (toggle2 == 0) { 
-      client.publish(outTopic,"Off"); } else {
-        client.publish(outTopic,"On");
-      }
+    updateStatus(toggle2);
       digitalWrite(13, toggle2);
   break;
   case '3':
   client.publish(outTopic, "Relay Three: ");
   toggle3 = !toggle3;
-    if (toggle3 == 0) { 
-      client.publish(outTopic, "Off"); } else {
-        client.publish(outTopic, "On");
-      }
+    updateStatus(toggle3);
       digitalWrite(14, toggle3);
   break;
   case '4':
   client.publish(outTopic, "Relay Four: ");
   toggle4 = !toggle4;
-    if (toggle4 == 0) { 
+    updateStatus(toggle4);
+      digitalWrite(16, toggle4);
+  break;
+  case 's':
+  client.publish(outTopic,"Status: (0 off/1 on)");
+  char temp[100];
+  snprintf(temp,100,"Relay 1: %d, Relay 2: %d, Relay 3: %d, Relay 4: %d",toggle1,toggle2,toggle3,toggle4);
+  client.publish(outTopic,temp);
+  break;
+  default:
+  client.publish(outTopic, "Unknown Relay, Use # between 1 and 4, or s for status");
+  
+  }
+}
+
+void updateStatus(boolean toggle) {
+  if (toggle == 0) { 
       client.publish(outTopic, "Off"); } else {
         client.publish(outTopic, "On");
       }
-      digitalWrite(16, toggle4);
-  break;
-  default:
-  client.publish(outTopic, "Unknown Relay");
-  
-  }
 }
 
 void reconnect() {
@@ -151,7 +163,11 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client")) {
+    uint32_t chipid=ESP.getChipId();
+    char clientid[16];
+    snprintf(clientid,16,"Relay%08X",chipid);
+    Serial.println(clientid);
+    if (client.connect(clientid)) {
       Serial.println("connected");
       // Once connected, publish an announcement...
       client.publish(outTopic, "LinkNode Relay Online!");
@@ -174,7 +190,5 @@ void loop() {
   }
   client.loop();
 }
-
-
 
 

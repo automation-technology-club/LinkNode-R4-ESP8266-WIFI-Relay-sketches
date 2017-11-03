@@ -8,6 +8,25 @@
  *  
  *  (C) LeRoy Miller, 2017
  *  
+ *   License:  
+ *  This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses>
+ 
+*/
+
+/*
+ * Nov 3, 2017 - Added status update.
+ *
  */
 
 #include <ESP8266WiFi.h>
@@ -100,7 +119,7 @@ void loop() {
   
   // Wait until the client sends some data
   Serial.println("new client");
-  client.println("Wifi Relay v1.0");
+  client.println("Wifi Relay v1.1");
   while(!client.available()){
     delay(1);
   }
@@ -149,6 +168,12 @@ void loop() {
       }
     digitalWrite(16, toggle4);
   }
+  if (req == "s") {
+    client.print("Status: (0 off/1 on)\n");
+    char temp[100];
+  snprintf(temp,100,"Relay 1: %d, Relay 2: %d, Relay 3: %d, Relay 4: %d",toggle1,toggle2,toggle3,toggle4);
+  client.print(temp);
+  }
   client.flush();
   
   
@@ -157,4 +182,5 @@ delay(100);
   // The client will actually be disconnected 
   // when the function returns and 'client' object is detroyed
 }
+
 
